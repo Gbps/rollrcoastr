@@ -46,9 +46,7 @@ function cl.startGame()
 	fallingObject:setVolume(0.2)
 	gameOver = love.audio.newSource('gameOver.wav')
 	fallingObject:setVolume(0.2)
-	song = love.audio.newSource('thesong.mp3')
-	song:setLooping(true)
-	song:setVolume(0.2)
+
 end
 
 function cl.update( dt )
