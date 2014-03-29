@@ -5,7 +5,7 @@ require "coasterLib"
 
 
 function love.load()
-
+	math.randomseed( os.time() )
 	love.window.setMode( 960, 640, {});
 	love.physics.setMeter( 32 );
 	_world = love.physics.newWorld(0, 9.81*32, true);

@@ -4,6 +4,7 @@ mousePressed = false;
 mouseMaxX = 0;
 XScroll = 0;
 chainJoints = {}
+coasterBodies = {1,2,3,4,5,6}
 
 function coasterLibUpdate( dt )
 	local mouseX, mouseY = love.mouse.getPosition( )
@@ -14,9 +15,7 @@ function coasterLibUpdate( dt )
 		mouseLastY = mouseY;
 	end
 
-	local absVal = math.abs( mouseLastX-mouseX ) + math.abs( mouseLastY-mouseY );
-
-	if (mouseX > mouseLastX) and absVal > 10 and mousePressed and not (mouseLastX == mouseX and mouseLastY == mouseY) then
+	if (mouseX > mouseLastX) and mousePressed and not (mouseLastX == mouseX and mouseLastY == mouseY) then
 		createLineObj( mouseLastX, mouseLastY, mouseX, mouseY)
 		mouseLastX = mouseX;
 		mouseLastY = mouseY;
@@ -41,6 +40,21 @@ function createLineObj( x1, y1, x2, y2)
 	return obj;
 end
 
+table.indexOf = function( t, object )
+	local result
+ 
+	if "table" == type( t ) then
+		for i=1,#t do
+			if object == t[i] then
+				result = i
+				break
+			end
+		end
+	end
+ 
+	return result
+end
+
 function createCoasterBody(x, y, n, first)
 
 	local body = love.physics.newBody( _world, x, y, "dynamic" )
@@ -53,7 +67,9 @@ function createCoasterBody(x, y, n, first)
 	if first == true then
 		fixture:setUserData( "coasterCarFirst" )
 	else
-		fixture:setUserData( "coasterCar" )
+		local numSelected = coasterBodies[ math.random( #coasterBodies ) ];
+		fixture:setUserData( "coasterCar" .. numSelected )
+		table.remove( coasterBodies, table.indexOf(coasterBodies, numSelected));
 	end
 
 	local axel_shape1 = love.physics.newRectangleShape(  0, 0, 8, 8, 0 )
@@ -180,9 +196,15 @@ end
 function loadWorldSprites( )
 	worldSprites = {}
 	worldSprites["coasterCarFirst"] = love.graphics.newImage("car_h.png");
-	worldSprites["coasterCar"] = love.graphics.newImage("car_b_1.png");
+	worldSprites["coasterCar1"] = love.graphics.newImage("car_b_1.png");
+	worldSprites["coasterCar2"] = love.graphics.newImage("car_b_2.png");
+	worldSprites["coasterCar3"] = love.graphics.newImage("car_b_3.png");
+	worldSprites["coasterCar4"] = love.graphics.newImage("car_b_4.png");
+	worldSprites["coasterCar5"] = love.graphics.newImage("car_b_5.png");
+	worldSprites["coasterCar6"] = love.graphics.newImage("car_b_6.png");
 	worldSprites["wheel"] = love.graphics.newImage("wheel.png");
 	worldSprites["chain"] = love.graphics.newImage("chain.png");
+	worldSprites["rail"] = love.graphics.newImage("rail.png");
 end
 
 function angleBetween( x1, y1, x2, y2)
@@ -214,8 +236,10 @@ function spriteWorldDraw(world)
       	local shape = fixture:getShape()
         local shapeType = shape:getType()
         if (shapeType == "edge") then
+        	local x1, y1, x2, y2  = shape:getPoints();
+        	local angle = angleBetween( x1, y1, x2, y2)
             love.graphics.setColor(255,255,255,255)
-            love.graphics.line(shape:getPoints())
+            love.graphics.draw( worldSprites["rail"], x1, y1, angle);
       	elseif (sprite ~= nil) then
       		local centerX, centerY = fixture:getMassData()
       		local width = sprite:getWidth()
@@ -251,7 +275,6 @@ function debugWorldDraw(world)
       love.graphics.translate(bx,by)
       love.graphics.rotate(bodyAngle)
       
-      math.randomseed(1) --for color generation
       
       local fixtures = body:getFixtureList()
       for i=1,#fixtures do
