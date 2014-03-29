@@ -31,7 +31,13 @@ function love.keypressed(key)
 	elseif key == 'm' and afterGame == true then
 		beforeGame = true
 		afterGame = false
-	end
+	elseif key == "z" then
+		if( love.audio.getVolume() == 1) then
+    		love.audio.setVolume( 0 )
+    	else
+    		love.audio.setVolume( 1 )
+    	end
+  	end
 end
 
 function coasterLib.GameOver()
