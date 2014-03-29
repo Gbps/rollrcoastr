@@ -170,13 +170,21 @@ function cl.createParticleEmitter()
 	  cl.constructionEmitter:setColors                (200, 200, 255, 240, 255, 255, 255, 10)
 	  cl.constructionEmitter:stop()
 end
+
+local supportCount = 0;
+
 function cl.createLineObj( x1, y1, x2, y2)
 	slowCon:play()
 
 	local body = love.physics.newBody( _world, 0, 0, "static" )
 	local shape = love.physics.newEdgeShape( x1, y1, x2, y2 )
 	local fixture = love.physics.newFixture(body, shape)
+	supportCount = supportCount + 1;
 	fixture:setUserData("track");
+	if supportCount >= 5 then
+		supportCount = 0;
+		fixture:setUserData("track_support");
+	end
 	fixture:setFriction(1)
 	return obj;
 end
@@ -409,6 +417,7 @@ function cl.loadWorldSprites( )
 	cl.worldSprites["beachball"] = love.graphics.newImage("bball.png");
 	cl.worldSprites["wheel32"] = love.graphics.newImage("wheel32.png");
 	cl.worldSprites["crate"] = love.graphics.newImage("crate.png");
+	cl.worldSprites["support"] = love.graphics.newImage("support.png");
 	
 end
 
@@ -437,7 +446,7 @@ function cl.spriteWorldDraw(world)
       love.graphics.push()
       love.graphics.translate(bx,by-verticalOffset)
       love.graphics.rotate(bodyAngle)
-      
+      	
       local fixtures = body:getFixtureList()
       for i=1,#fixtures do
       	local fixture = fixtures[i];
@@ -445,11 +454,12 @@ function cl.spriteWorldDraw(world)
       	local sprite = cl.worldSprites[data];
       	local shape = fixture:getShape()
         local shapeType = shape:getType()
+        local supportCount = 0;
         if (shapeType == "edge") then
         	x1, y1, x2, y2 = shape:getPoints()
         	if( x2 < cl.XScroll-300 ) then
         		body:destroy();
-        	elseif data == "track" then
+        	elseif data == "track" or data == "track_support" then
 	            local x1, y1, x2, y2 = shape:getPoints()
 
         		if LastCoordX == nil then
@@ -461,7 +471,12 @@ function cl.spriteWorldDraw(world)
 		        love.graphics.draw(trackSprite, LastCoordX, LastCoordY, angle, 1, 1, trackSprite:getWidth()/2, trackSprite:getHeight()/2);
 		        LastCoordX = x1 + 35 * math.cos( angle );
 				LastCoordY = y1 + 35 * math.sin( angle );
-
+				supportCount = supportCount + 1;
+				if (data == "track_support") then
+					local supportSprite = cl.worldSprites["support"];
+					love.graphics.draw( supportSprite, x2, y2, 0, 1, 1, supportSprite:getWidth(), 0)
+					supportCount = 0;
+				end
 	        end
       	elseif (sprite ~= nil) then
       		local centerX, centerY = fixture:getMassData()
