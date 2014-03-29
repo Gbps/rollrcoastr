@@ -40,6 +40,8 @@ function cl.startGame()
 	floorObj = cl.createStartingFloorBody(); -- Create floor body ( bottom of the screen )
 
 	background.load()
+	slowCon = love.audio.newSource('slowConstruction.wav')
+	slowCon:setVolume(0.5)
 end
 
 function cl.update( dt )
@@ -127,6 +129,8 @@ function cl.createParticleEmitter()
 	  cl.constructionEmitter:stop()
 end
 function cl.createLineObj( x1, y1, x2, y2)
+	slowCon:play()
+
 	local body = love.physics.newBody( _world, 0, 0, "static" )
 	local shape = love.physics.newEdgeShape( x1, y1, x2, y2 )
 	local fixture = love.physics.newFixture(body, shape)
