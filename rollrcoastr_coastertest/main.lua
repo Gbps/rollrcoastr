@@ -29,11 +29,18 @@ function love.keypressed(key)
 		love.mouse.setVisible( false )
 		beforeGame = false
 		afterGame = false
-		elseif key == 'm' and afterGame == true then
-			beforeGame = true
-			afterGame = false
-		end
-	end
+
+	elseif key == 'm' and afterGame == true then
+		beforeGame = true
+		afterGame = false
+	elseif key == "z" then
+		if( love.audio.getVolume() == 1) then
+    		love.audio.setVolume( 0 )
+    	else
+    		love.audio.setVolume( 1 )
+    	end
+  	end
+end
 
 	function coasterLib.GameOver()
 		afterGame = true;
