@@ -334,7 +334,6 @@ function cl.onDraw( world )
 
 	love.graphics.translate( -cl.XScroll, 0);
 	cl.spriteWorldDraw( world )
-	cl.debugWorldDraw( world )
 	cl.EnemyDraw()
 	love.graphics.draw(cl.worldSprites["cursor"], love.mouse.getX()+cl.XScroll, love.mouse.getY())
 
@@ -435,6 +434,7 @@ function cl.spriteWorldDraw(world)
    end
 
 end
+
 function cl.debugWorldDraw(world)
    local bodies = world:getBodyList()
    
