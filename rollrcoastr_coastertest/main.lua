@@ -3,6 +3,7 @@ WORLDWIDTH = 960;
 
 require "coasterLib"
 require "background"
+require "leaderboard"
 
 local afterGame = false;
 local beforeGame = true;
@@ -14,7 +15,7 @@ function love.load()
 
 	song = love.audio.newSource('thesong.mp3')
 	song:setLooping(true)
-	song:setVolume(0.2)
+	song:setVolume(0.4)
 	song:play()
 
 	love.window.setMode( 960, 640, {})
@@ -23,11 +24,12 @@ function love.load()
 end
 
 function love.keypressed(key)
-	if key == 'x' then
+	if key == 'x' and afterGame == true or beforeGame == true then
 		coasterLib.startGame()
 		love.mouse.setVisible( false )
 		beforeGame = false
 		afterGame = false
+
 	elseif key == 'm' and afterGame == true then
 		beforeGame = true
 		afterGame = false
@@ -40,38 +42,39 @@ function love.keypressed(key)
   	end
 end
 
-function coasterLib.GameOver()
-	afterGame = true;
-	score = coasterLib.XScroll / 32
-end
-
-function love.update( dt )
-   background.update(dt)
-   if beforeGame or afterGame then return; end
-   coasterLib.update( dt )
-
-   _world:update( dt )
-end
-
-
-function love.draw() 
-	background.draw()
-	if afterGame then 
-		displayEnd()
-		return; 
+	function coasterLib.GameOver()
+		afterGame = true;
+		score = coasterLib.XScroll / 32
+		leaderboard.updateBoard(math.floor(score))
 	end
-	if beforeGame then love.graphics.draw(title) return; end
-	coasterLib.onDraw( _world )
 
-end
+	function love.update( dt )
+		background.update(dt)
+		if beforeGame or afterGame then return; end
+		coasterLib.update( dt )
 
-function displayEnd()
-	love.graphics.draw(end_screen)
-		font = love.graphics.newFont(20)
+		_world:update( dt )
+	end
+
+	function love.draw() 
+		background.draw()
+		if afterGame then 
+			displayEnd()
+			return; 
+		end
+		if beforeGame then love.graphics.draw(title) return; end
+		coasterLib.onDraw( _world )
+
+	end
+
+	function displayEnd()
+		love.graphics.draw(end_screen)
+		font = love.graphics.newImageFont("Courier New20pt.png", " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~");
 		love.graphics.setFont(font)
 		love.graphics.setColor(0,0,0)
- 		love.graphics.printf('You went '..tostring(math.floor(score))..' meters!',
- 			(WORLDWIDTH/2)-(font:getWidth('You went '..tostring(math.floor(score))..' meters!'))/2,
- 			300,500,center)
- 		love.graphics.setColor(255,255,255)
-end
+		love.graphics.printf('You went '..tostring(math.floor(score))..' meters!',
+			(WORLDWIDTH/2)-(font:getWidth('You went '..tostring(math.floor(score))..' meters!'))/2,
+			300,500,center)
+		leaderboard.displayBoard(math.floor())
+		love.graphics.setColor(255,255,255)
+	end
