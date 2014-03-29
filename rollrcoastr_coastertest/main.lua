@@ -7,6 +7,8 @@ require "leaderboard"
 
 local afterGame = false;
 local beforeGame = true;
+titleArray = {'revengeance', 'better than skyrim', 'this game is _unreal_', 'spiritual sequal to minecraft', 'I hope we win', 'voted best game of the year all years', 'this is an easter egg ;)', 'game is hard', 'the hit new moba from Team Rotatoes', 'better than dota', 'a rotatoes production', 'it\'ll make you cry', 'help me', 'the citizen kane of gaming', 'help: trapped in indian game development studio', 'beachball simulator 2014', 'based on a flappy bird meme', 'not based on flappy bird', 'definitely not flappy bird stop asking', 'now featuring bitcoin microtransactions', 'funded by kickstarter', 'funded by indiegogo', 'funded by kickstopper', 'sponsored by olive garden', 'we were paid to put this here', 'Enjoy the fresh taste of MOUNTAIN DEW™ and DORITOES™', 'AAAAAAAAAAAAAAAA', 'sponsored by fisher south', 'flappymemecoasterextreme2012', 'created by Notch', 'the spiritual sequal to potato counter extreme', 'we made this music', 'don\'t tell our parents', 'sherlock isn\'t even that good of a show', 'unemployment.png', 'written with EMACS', 'seriously guys I hope you don\'t do this', 'i\'ve been awake for 36 hours', 'please sponsor us', 'sponsored by razer', 'happy birthday sam coat'}
+
 function love.load()
 	math.randomseed( os.time() )
 	title = love.graphics.newImage('titlescreen.png')
@@ -19,6 +21,7 @@ function love.load()
 	song:play()
 
 	love.window.setMode( 960, 640, {})
+	love.window.setTitle('rollr coaster - '.. titleArray[math.random(#titleArray)])
 	background.load()
 
 end
