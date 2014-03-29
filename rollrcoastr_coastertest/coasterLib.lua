@@ -11,6 +11,8 @@ cl.wheelFixtures = {}
 cl.FastSpeed = false;
 cl.FirstCar = nil;
 cl.EnemyList = {}
+cl.RandomProductionSpeed = false;
+cl.ProductionSpeed = 240;
 
 function cl.startGame()
 	if _world ~= nil then
@@ -30,6 +32,9 @@ function cl.startGame()
 		cl.enemies = {}
 		cl.enemyTimer = 0;
 		cl.enemyDelay = 200;
+		cl.RandomProductionSpeed = false;
+		cl.ProductionSpeed = 240;
+
 	end
 	love.window.setMode( 960, 640, {});
 	love.physics.setMeter( 32 );
@@ -53,30 +58,26 @@ function cl.update( dt )
 	if( cl.SmoothMouseY == nil) then cl.SmoothMouseY = 600; end
 	if cl.constructionEmitter == nil then cl.createParticleEmitter() end
 
-	cl.XScroll = cl.XScroll + dt*240;
-	if( love.keyboard.isDown(" ")) and not cl.FastSpeed then
-	  	cl.constructionEmitter:setParticleLifetime(1.25)
-	  	cl.constructionEmitter:setEmissionRate(40 )
-	  	--cl.constructionEmitter:setBufferSize( 64 )
-	  	cl.FastSpeed = true
-	elseif cl.FastSpeed and not love.keyboard.isDown(" ") then
-		cl.constructionEmitter:setParticleLifetime(1)
-	  	cl.constructionEmitter:setEmissionRate(20 )
-	  	--cl.constructionEmitter:setBufferSize( 32 )
-	  	cl.FastSpeed = false
-	end
+	cl.XScroll = cl.XScroll + dt*cl.ProductionSpeed;
 
-	if cl.FastSpeed then
-		cl.XScroll = cl.XScroll + dt*120;
+	if( love.keyboard.isDown("w")) and not cl.FastSpeed then
+	  	cl.ProductionSpeed = 320;
+	elseif( love.keyboard.isDown("q")) and not cl.FastSpeed then
+	  	cl.ProductionSpeed = 180;
+	else
+		cl.ProductionSpeed = 240;
 	end
+	
 	cl.SmoothMouseY = cl.SmoothMouseY - ( ( cl.SmoothMouseY - mouseY) * .02 )
 	if math.abs(cl.SaveCoordX - (500+cl.XScroll) ) > 35 then
 		
-		mouseX = mouseX + cl.XScroll;
-
-		cl.createLineObj( cl.SaveCoordX, cl.SaveCoordY, 500+cl.XScroll, cl.SmoothMouseY);
+		local randomY = 0;
+		if cl.RandomProductionSpeed then
+			randomY = math.random(0,15) - math.random(0,15);
+		end
+		cl.createLineObj( cl.SaveCoordX, cl.SaveCoordY, 500+cl.XScroll, cl.SmoothMouseY+randomY);
 		cl.SaveCoordX = 500+cl.XScroll;
-		cl.SaveCoordY = cl.SmoothMouseY;
+		cl.SaveCoordY = cl.SmoothMouseY+randomY;
 	end
 
 	cl.constructionEmitter:start( )
@@ -252,7 +253,7 @@ function cl.createCoasterBody(x, y, n, first)
 	return obj;
 end
 
-cl.enemySpawn = true;
+cl.enemySpawn = false;
 cl.enemies = {}
 cl.enemyTimer = 0;
 cl.enemyDelay = 200;
@@ -277,7 +278,7 @@ function cl.EnemyThink()
 
 	for i,k in pairs(cl.enemies) do
 
-		if (k.XOffset < cl.XScroll) then
+		if (k.XOffset+100 < cl.XScroll) then
 			k:Destroy();
 		end
 	end
@@ -341,6 +342,7 @@ function cl.onDraw( world )
 end
 
 function cl.loadWorldSprites( )
+	--love.graphics.setDefaultFilter("nearest", "nearest")
 	cl.worldSprites = {}
 	cl.worldSprites["coasterCarFirst"] = love.graphics.newImage("car_h.png");
 	cl.worldSprites["coasterCar1"] = love.graphics.newImage("car_b_1.png");
@@ -356,6 +358,8 @@ function cl.loadWorldSprites( )
 	cl.worldSprites["track"] = love.graphics.newImage("track.png");
 	cl.worldSprites["dust"] = love.graphics.newImage("dust.png");
 	cl.worldSprites["beachball"] = love.graphics.newImage("bball.png");
+	cl.worldSprites["wheel32"] = love.graphics.newImage("wheel32.png");
+	
 end
 
 function angleBetween( x1, y1, x2, y2)
@@ -374,7 +378,7 @@ end
 
 function cl.spriteWorldDraw(world)
 	local bodies = world:getBodyList()
-   	local verticalOffset = background.getVerticalConstant();
+   	local verticalOffset = background.getVerticalConstant()*2;
    for b=#bodies,1,-1 do
       local body = bodies[b]
       local bx,by = body:getPosition()
@@ -524,7 +528,7 @@ end
 
 local brickWall = {}
 
-function brickWall:Spawn( x, y )
+function brickWall:Spawn( x )
 	self.XOffset = x;
 
 	self.RandOffset = 64*math.random(0,3) - 64*math.random(0,3)
@@ -610,7 +614,7 @@ function brickWall:Draw()
 end
 
 function brickWall:Destroy()
-	self = nil;
+	table.remove( cl.enemies, table.indexOf( cl.enemies, self ) );
 end
 
 table.insert(cl.EnemyList, brickWall) 
@@ -624,7 +628,7 @@ function beachBall:New()
     return o
 end
 
-function beachBall:Spawn( x, y )
+function beachBall:Spawn( x )
 	self.XOffset = x
 	self.Body = love.physics.newBody( _world, x, 0, "dynamic" )
 	local x1, y1 = self.Body:getWorldCenter()
@@ -633,18 +637,89 @@ function beachBall:Spawn( x, y )
 	local angle = angleBetween( x1, y1, firstCarPosX, firstCarPosY);
 	local vx, vy = angleVector( angle );
 	self.Body:applyLinearImpulse( vx*1000, vy*1000 ) 
-	local shape = love.physics.newCircleShape( 8 )
+	local shape = love.physics.newCircleShape( 12 )
 	self.Fixture = love.physics.newFixture(self.Body, shape)
 	self.Fixture:setUserData( "beachball");
 
 end
 
 function beachBall:Draw( )
+	local x1, y1 = self.Body:getWorldCenter()
+
 	self.XOffset = x1
 
 end
 
 function beachBall:Destroy()
-	self = nil;
+	table.remove( cl.enemies, table.indexOf( cl.enemies, self ) );
 end
 table.insert(cl.EnemyList, beachBall);
+
+
+local randomTrack = {}
+
+function randomTrack:New()
+	o = {}   -- create object if user does not provide one
+    setmetatable(o, self)
+    self.__index = self
+    return o
+end
+
+function randomTrack:Spawn( x )
+	self.XOffset = x
+	if (cl.RandomProductionSpeed == true) then self:Destroy() return; end
+	cl.RandomProductionSpeed = true;
+	self.Font = love.graphics.newFont(48)
+end
+
+function randomTrack:Draw( )
+	if self.Destructed then return; end
+	love.graphics.setColor( 255, 0, 0, 255 )
+	love.graphics.setFont(self.Font)
+	love.graphics.setColor( 255, 255, 255, 255 )
+	local w = love.graphics.getWidth()
+
+	love.graphics.printf("Bumpy Track Ahead!\nCareful!", cl.XScroll, 100, w, "center")
+end
+
+function randomTrack:Destroy()
+	cl.RandomProductionSpeed = false;
+	self.Destructed = true;
+	table.remove( cl.enemies, table.indexOf( cl.enemies, self ) );
+end
+
+table.insert(cl.EnemyList, randomTrack);
+
+local superFastTrack = {}
+
+function superFastTrack:New()
+	o = {}   -- create object if user does not provide one
+    setmetatable(o, self)
+    self.__index = self
+    return o
+end
+
+function superFastTrack:Spawn( x )
+	self.XOffset = x
+	if (cl.RandomProductionSpeed == true) then self:Destroy() return; end
+	cl.RandomProductionSpeed = true;
+	self.Font = love.graphics.newFont(48)
+end
+
+function superFastTrack:Draw( )
+	if self.Destructed then return; end
+	love.graphics.setColor( 255, 0, 0, 255 )
+	love.graphics.setFont(self.Font)
+	love.graphics.setColor( 255, 255, 255, 255 )
+	local w = love.graphics.getWidth()
+
+	love.graphics.printf("Super speed!\nTrack production changes super fast!", cl.XScroll, 100, w, "center")
+end
+
+function superFastTrack:Destroy()
+	cl.RandomProductionSpeed = false;
+	self.Destructed = true;
+	table.remove( cl.enemies, table.indexOf( cl.enemies, self ) );
+end
+
+--table.insert(cl.EnemyList, superFastTrack);
