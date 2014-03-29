@@ -19,6 +19,7 @@ function love.load()
 
 	love.window.setMode( 960, 640, {})
 	background.load()
+
 end
 
 function love.keypressed(key)
@@ -35,6 +36,7 @@ end
 
 function coasterLib.GameOver()
 	afterGame = true;
+	score = coasterLib.XScroll / 32
 end
 
 function love.update( dt )
@@ -49,11 +51,21 @@ end
 function love.draw() 
 	background.draw()
 	if afterGame then 
-		love.graphics.draw(end_screen)
- 
+		displayEnd()
 		return; 
 	end
 	if beforeGame then love.graphics.draw(title) return; end
 	coasterLib.onDraw( _world )
 
+end
+
+function displayEnd()
+	love.graphics.draw(end_screen)
+		font = love.graphics.newFont(20)
+		love.graphics.setFont(font)
+		love.graphics.setColor(0,0,0)
+ 		love.graphics.printf('You went '..tostring(math.floor(score))..' meters!',
+ 			(WORLDWIDTH/2)-(font:getWidth('You went '..tostring(math.floor(score))..' meters!'))/2,
+ 			300,500,center)
+ 		love.graphics.setColor(255,255,255)
 end
