@@ -13,7 +13,8 @@ cl.FirstCar = nil;
 cl.EnemyList = {}
 cl.RandomProductionSpeed = false;
 cl.ProductionSpeed = 240;
-
+cl.reversedControls = false;
+cl.reversedMouse = false;
 function cl.startGame()
 	if _world ~= nil then
 		cl.mouseLastX = -100;
@@ -34,7 +35,11 @@ function cl.startGame()
 		cl.enemyDelay = 200;
 		cl.RandomProductionSpeed = false;
 		cl.ProductionSpeed = 240;
-
+		cl.reversedControls = false;
+		cl.reversedMouse = false;
+		for i,k in pairs(cl.enemies) do
+			k:Destroy();
+		end
 	end
 	love.window.setMode( 960, 640, {});
 	love.physics.setMeter( 32 );
@@ -54,6 +59,11 @@ function cl.startGame()
 
 end
 
+function math.Clamp(val, lower, upper)
+    if lower > upper then lower, upper = upper, lower end -- swap if boundaries supplied the wrong way
+    return math.max(lower, math.min(upper, val))
+end
+
 function cl.update( dt )
 	
 	cl.checkLostGame();
@@ -67,20 +77,41 @@ function cl.update( dt )
 
 	cl.XScroll = cl.XScroll + dt*cl.ProductionSpeed;
 
-	if( love.keyboard.isDown("w")) and not cl.FastSpeed then
-	  	cl.ProductionSpeed = 320;
-	elseif( love.keyboard.isDown("q")) and not cl.FastSpeed then
-	  	cl.ProductionSpeed = 180;
+	if( love.keyboard.isDown("q")) then
+		if cl.FastSpeed then
+		  	cl.ProductionSpeed = 450;
+		else
+			cl.ProductionSpeed = 320;
+		end
+	elseif( love.keyboard.isDown("w")) then
+	  	if cl.FastSpeed then
+		  	cl.ProductionSpeed = 50;
+		else
+			cl.ProductionSpeed = 180;
+		end
 	else
 		cl.ProductionSpeed = 240;
 	end
 	
-	cl.SmoothMouseY = cl.SmoothMouseY - ( ( cl.SmoothMouseY - mouseY) * .02 )
+	if cl.reversedControls then
+
+		if cl.ProductionSpeed > 240 then
+			cl.ProductionSpeed = cl.ProductionSpeed-240;
+		elseif cl.ProductionSpeed < 240 then
+			cl.ProductionSpeed = 240+cl.ProductionSpeed;
+		end
+	end
+
+	if (not cl.reversedMouse) then
+		cl.SmoothMouseY = math.Clamp( cl.SmoothMouseY - ( ( cl.SmoothMouseY - mouseY) * .02 ), 0, SCREENHEIGHT);
+	else
+		cl.SmoothMouseY = math.Clamp( cl.SmoothMouseY + ( ( cl.SmoothMouseY - mouseY) * .02 ), 0, SCREENHEIGHT);
+	end
 	if math.abs(cl.SaveCoordX - (500+cl.XScroll) ) > 35 then
 		
 		local randomY = 0;
 		if cl.RandomProductionSpeed then
-			randomY = math.random(0,15) - math.random(0,15);
+			randomY = math.random(0,24) - math.random(0,24);
 		end
 		cl.createLineObj( cl.SaveCoordX, cl.SaveCoordY, 500+cl.XScroll, cl.SmoothMouseY+randomY);
 		cl.SaveCoordX = 500+cl.XScroll;
@@ -98,7 +129,7 @@ function cl.checkLostGame()
 	if cl.FirstCar == nil then return; end
 
 	local x, y = cl.FirstCar:getWorldCenter()
-	if x+40 >= 500+cl.XScroll then
+	if x+40 >= 600+cl.XScroll then
 		coasterLib.GameOver();
 		gameOver:play()
 		cl.startGame();
@@ -279,6 +310,10 @@ function cl.EnemyThink()
 
 	if cl.enemySpawn == true then
 		local newEnemy = cl.EnemyList[ math.random( #cl.EnemyList ) ] ;
+		if( newEnemy:IsHard() ) then
+			newEnemy = cl.EnemyList[ math.random( #cl.EnemyList ) ]; -- This one is difficult
+		end
+
 		local enemy = newEnemy:New();
 		cl.enemySpawn = false;
 		cl.enemyDelay = cl.enemyDelay - math.random(2,5)
@@ -371,6 +406,7 @@ function cl.loadWorldSprites( )
 	cl.worldSprites["dust"] = love.graphics.newImage("dust.png");
 	cl.worldSprites["beachball"] = love.graphics.newImage("bball.png");
 	cl.worldSprites["wheel32"] = love.graphics.newImage("wheel32.png");
+	cl.worldSprites["crate"] = love.graphics.newImage("crate.png");
 	
 end
 
@@ -629,6 +665,11 @@ function brickWall:Destroy()
 	table.remove( cl.enemies, table.indexOf( cl.enemies, self ) );
 end
 
+
+function brickWall:IsHard()
+	return false;
+end
+
 table.insert(cl.EnemyList, brickWall) 
 
 local beachBall = {}
@@ -666,7 +707,55 @@ end
 function beachBall:Destroy()
 	table.remove( cl.enemies, table.indexOf( cl.enemies, self ) );
 end
+
+function beachBall:IsHard()
+	return false;
+end
 table.insert(cl.EnemyList, beachBall);
+
+local crateBox = {}
+
+function crateBox:New()
+ 	o = {}   -- create object if user does not provide one
+    setmetatable(o, self)
+    self.__index = self
+    return o
+end
+
+function crateBox:Spawn( x )
+	self.XOffset = x
+	self.Body = love.physics.newBody( _world, x, 0, "dynamic" )
+	local x1, y1 = self.Body:getWorldCenter()
+	local firstCarPosX, firstCarPosY = cl.FirstCar:getWorldCenter();
+
+	local angle = angleBetween( x1, y1, firstCarPosX, firstCarPosY);
+	local vx, vy = angleVector( angle+.25 );
+	self.Body:applyLinearImpulse( vx*500, vy*500 ) 
+	self.Body:setAngularVelocity( math.random(-math.pi*2, math.pi*2) );
+	local shape = love.physics.newRectangleShape( 0, 0, 32, 32, 0 )
+	fallingObject:play()
+	self.Fixture = love.physics.newFixture(self.Body, shape)
+	self.Fixture:setDensity(6);
+	self.Fixture:setUserData( "crate");
+
+end
+
+function crateBox:Draw( )
+	local x1, y1 = self.Body:getWorldCenter()
+
+	self.XOffset = x1
+
+end
+
+function crateBox:Destroy()
+	table.remove( cl.enemies, table.indexOf( cl.enemies, self ) );
+end
+
+function crateBox:IsHard()
+	return false;
+end
+
+table.insert(cl.EnemyList, crateBox);
 
 
 local randomTrack = {}
@@ -682,17 +771,22 @@ function randomTrack:Spawn( x )
 	self.XOffset = x
 	if (cl.RandomProductionSpeed == true) then self:Destroy() return; end
 	cl.RandomProductionSpeed = true;
-	self.Font = love.graphics.newFont(48)
+	self.Font = love.graphics.newImageFont("Courier New20pt.png", " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~");
 end
 
 function randomTrack:Draw( )
 	if self.Destructed then return; end
 	love.graphics.setColor( 255, 0, 0, 255 )
+	
 	love.graphics.setFont(self.Font)
-	love.graphics.setColor( 255, 255, 255, 255 )
+
 	local w = love.graphics.getWidth()
 
-	love.graphics.printf("Bumpy Track Ahead!\nCareful!", cl.XScroll, 100, w, "center")
+	love.graphics.printf("Bumpy Track Ahead!\nCareful!", cl.XScroll, 100, w, "center");
+
+	love.graphics.setColor( 255, 255, 255, 255 )
+
+	
 end
 
 function randomTrack:Destroy()
@@ -701,38 +795,53 @@ function randomTrack:Destroy()
 	table.remove( cl.enemies, table.indexOf( cl.enemies, self ) );
 end
 
+function randomTrack:IsHard()
+	return false;
+end
+
 table.insert(cl.EnemyList, randomTrack);
 
-local superFastTrack = {}
+local reversedMouse = {}
 
-function superFastTrack:New()
+function reversedMouse:New()
 	o = {}   -- create object if user does not provide one
     setmetatable(o, self)
     self.__index = self
     return o
 end
 
-function superFastTrack:Spawn( x )
+function reversedMouse:Spawn( x )
 	self.XOffset = x
-	if (cl.RandomProductionSpeed == true) then self:Destroy() return; end
-	cl.RandomProductionSpeed = true;
-	self.Font = love.graphics.newFont(48)
+	if (cl.reversedMouse == true) then self:Destroy() return; end
+	cl.reversedMouse = true;
+	self.Font = love.graphics.newImageFont("Courier New20pt.png", " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~");
 end
 
-function superFastTrack:Draw( )
+function reversedMouse:Draw( )
 	if self.Destructed then return; end
 	love.graphics.setColor( 255, 0, 0, 255 )
+
 	love.graphics.setFont(self.Font)
-	love.graphics.setColor( 255, 255, 255, 255 )
+
 	local w = love.graphics.getWidth()
 
-	love.graphics.printf("Super speed!\nTrack production changes super fast!", cl.XScroll, 100, w, "center")
+	love.graphics.printf("Reverse Mouse!\nUpside down!", cl.XScroll, 50, w, "center");
+
+	love.graphics.setColor( 255, 255, 255, 255 )
+
 end
 
-function superFastTrack:Destroy()
-	cl.RandomProductionSpeed = false;
+function reversedMouse:Destroy()
+	cl.reversedMouse = false;
 	self.Destructed = true;
+	local mouseX, mouseY = love.mouse.getPosition( )
+	love.mouse.setPosition( mouseX, cl.SmoothMouseY );
 	table.remove( cl.enemies, table.indexOf( cl.enemies, self ) );
 end
 
---table.insert(cl.EnemyList, superFastTrack);
+
+function reversedMouse:IsHard()
+	return true;
+end
+
+table.insert(cl.EnemyList, reversedMouse);
