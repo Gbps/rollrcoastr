@@ -24,7 +24,7 @@ function love.load()
 end
 
 function love.keypressed(key)
-	if key == 'x' then
+	if key == 'x' and afterGame == true or beforeGame == true then
 		coasterLib.startGame()
 		love.mouse.setVisible( false )
 		beforeGame = false
