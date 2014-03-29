@@ -45,6 +45,15 @@ function cl.startGame()
 	floorObj = cl.createStartingFloorBody(); -- Create floor body ( bottom of the screen )
 
 	background.load()
+	slowCon = love.audio.newSource('slowConstruction.wav')
+	slowCon:setVolume(0.2)
+	fallingObject = love.audio.newSource('fallingObject.wav')
+	fallingObject:setVolume(0.2)
+	gameOver = love.audio.newSource('gameOver.wav')
+	fallingObject:setVolume(0.2)
+	song = love.audio.newSource('thesong.mp3')
+	song:setLooping(true)
+	song:setVolume(0.2)
 end
 
 function cl.update( dt )
@@ -93,12 +102,15 @@ function cl.checkLostGame()
 	local x, y = cl.FirstCar:getWorldCenter()
 	if x+40 >= 500+cl.XScroll then
 		coasterLib.GameOver();
+		gameOver:play()
 		cl.startGame();
 	elseif x+40 <= cl.XScroll then
 		coasterLib.GameOver();
+		gameOver:play()
 		cl.startGame()
     elseif y >= WORLDHEIGHT then
     	coasterLib.GameOver();
+    	gameOver:play()
     	cl.startGame()
     end
 
@@ -128,6 +140,8 @@ function cl.createParticleEmitter()
 	  cl.constructionEmitter:stop()
 end
 function cl.createLineObj( x1, y1, x2, y2)
+	slowCon:play()
+
 	local body = love.physics.newBody( _world, 0, 0, "static" )
 	local shape = love.physics.newEdgeShape( x1, y1, x2, y2 )
 	local fixture = love.physics.newFixture(body, shape)
@@ -638,6 +652,7 @@ function beachBall:Spawn( x )
 	local vx, vy = angleVector( angle );
 	self.Body:applyLinearImpulse( vx*1000, vy*1000 ) 
 	local shape = love.physics.newCircleShape( 12 )
+	fallingObject:play()
 	self.Fixture = love.physics.newFixture(self.Body, shape)
 	self.Fixture:setUserData( "beachball");
 
