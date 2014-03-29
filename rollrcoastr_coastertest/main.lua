@@ -2,28 +2,29 @@ WORLDHEIGHT = 640;
 WORLDWIDTH = 960;
 
 require "coasterLib"
-
+require "background"
 
 function love.load()
 	math.randomseed( os.time() )
-	love.window.setMode( 960, 640, {});
-	love.physics.setMeter( 32 );
-	_world = love.physics.newWorld(0, 9.81*32, true);
+	coasterLib.startGame()
+	love.mouse.setVisible( false );
 
-	coaster1Obj = createCoaster( 5, 100, 100 ); -- Create coaster body
-	floorObj = createTestFloorBody(); -- Create floor body ( bottom of the screen )
+end
+
+function coasterLib.GameOver()
 
 end
 
 function love.update( dt )
-   coasterLibUpdate( dt );
+   background.update(dt)
+   coasterLib.update( dt );
 
    _world:update( dt );
 end
 
 
-function love.draw()
-
-	coasterLibDraw( _world );
+function love.draw() 
+	background.draw()
+	coasterLib.onDraw( _world );
 
 end

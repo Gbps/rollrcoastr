@@ -22,7 +22,7 @@ parknum = 0
 SCREENWIDTH = 960
 SCREENHEIGHT = 640
 
-VERTCONST = 100
+VERTCONST = 50
 
 function background.load()
 	hills = love.graphics.newImage('hills.png')
@@ -53,10 +53,15 @@ function background.draw()
 	end
 end
 
+function background.getVerticalConstant()
+	x,y = love.mouse.getPosition()
+	return (y - (SCREENHEIGHT/2))/20;
+end
+
 function background.update(dt)
 	--vertical parallaxing
 	x,y = love.mouse.getPosition()
-	vertpar = (y - (SCREENHEIGHT/2))/20
+	vertpar = background.getVerticalConstant();
 
 	--horizontal parallaxing
 	hillpos = hillpos + HILLRATE
