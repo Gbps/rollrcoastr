@@ -14,7 +14,7 @@ function love.load()
 
 	song = love.audio.newSource('thesong.mp3')
 	song:setLooping(true)
-	song:setVolume(0.2)
+	song:setVolume(0.4)
 	song:play()
 
 	love.window.setMode( 960, 640, {})

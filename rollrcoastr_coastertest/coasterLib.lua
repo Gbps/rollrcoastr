@@ -56,6 +56,8 @@ function cl.startGame()
 	fallingObject:setVolume(0.2)
 	gameOver = love.audio.newSource('gameOver.wav')
 	fallingObject:setVolume(0.2)
+	reverseMouseSound = love.audio.newSource('ZAWARUDO.wav')
+	reverseMouseSound:setVolume(0.4)
 
 end
 
@@ -812,6 +814,7 @@ end
 
 function reversedMouse:Spawn( x )
 	self.XOffset = x
+	reverseMouseSound:play()
 	if (cl.reversedMouse == true) then self:Destroy() return; end
 	cl.reversedMouse = true;
 	self.Font = love.graphics.newImageFont("Courier New20pt.png", " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~");
