@@ -129,7 +129,7 @@ function cl.checkLostGame()
 	if cl.FirstCar == nil then return; end
 
 	local x, y = cl.FirstCar:getWorldCenter()
-	if x+40 >= 600+cl.XScroll then
+	if x+40 >= 550+cl.XScroll then
 		coasterLib.GameOver();
 		gameOver:play()
 		cl.startGame();
@@ -374,7 +374,8 @@ function cl.createStartingFloorBody()
 	local body = love.physics.newBody( _world, 0, 0, "static" )
 	local shape = love.physics.newEdgeShape( 0, WORLDHEIGHT/2, WORLDWIDTH, WORLDHEIGHT/2 )
 	local fixture = love.physics.newFixture(body, shape)
-	
+	fixture:setUserData("init_floor");
+
 	local obj = {}
 	obj.Body = body
 	obj.Shape = shape
@@ -416,7 +417,7 @@ function cl.loadWorldSprites( )
 	cl.worldSprites["wheel32"] = love.graphics.newImage("wheel32.png");
 	cl.worldSprites["crate"] = love.graphics.newImage("crate.png");
 	cl.worldSprites["support"] = love.graphics.newImage("support.png");
-	
+	cl.worldSprites["track_init"] = love.graphics.newImage("track_init.png");
 end
 
 function angleBetween( x1, y1, x2, y2)
@@ -457,6 +458,14 @@ function cl.spriteWorldDraw(world)
         	x1, y1, x2, y2 = shape:getPoints()
         	if( x2 < cl.XScroll-300 ) then
         		body:destroy();
+        	elseif data == "init_floor" then
+        		local trackSprite = cl.worldSprites["track_init"];
+        		love.graphics.draw(trackSprite, x1, y1, 0, 1, 1, 0, 0);
+        		love.graphics.draw(trackSprite, x1+190, y1, 0, 1, 1, 0, 0);
+        		love.graphics.draw(trackSprite, x1+380, y1, 0, 1, 1, 0, 0);
+        		love.graphics.draw(trackSprite, x1+570, y1, 0, 1, 1, 0, 0);
+        		love.graphics.draw(trackSprite, x1+760, y1, 0, 1, 1, 0, 0);
+        		
         	elseif data == "track" or data == "track_support" then
 	            local x1, y1, x2, y2 = shape:getPoints()
 
@@ -610,16 +619,10 @@ function brickWall:Spawn( x )
 	self.maxX1 = 2
   	self.maxY1 = math.ceil(self.Height1 / 32)
   	local size = self.maxX1 * self.maxY1
-	
-	self.spriteBatch1 = love.graphics.newSpriteBatch(self.Texture, size)
-  	self:setupSpriteBatch1()
 
   	self.maxX2 = 2
   	self.maxY2 = math.ceil(self.Height2 / 32)
   	local size = self.maxX2 * self.maxY2
-	
-	self.spriteBatch2 = love.graphics.newSpriteBatch(self.Texture, size)
-  	self:setupSpriteBatch2()
 end
 
 function brickWall:New()
@@ -629,9 +632,8 @@ function brickWall:New()
       return o
 end
 
-function brickWall:setupSpriteBatch1( )
+function brickWall:drawSprites1( )
 
-	self.spriteBatch1:clear()
   -- Set up (but don't draw) our images in a grid
   for y = 0, self.maxY1 do
     for x = 0, self.maxX1-1 do
@@ -640,16 +642,15 @@ function brickWall:setupSpriteBatch1( )
       local yPos = y * 32
  
       -- Add the image we previously set to this point
-      self.spriteBatch1:add(xPos, yPos)
+      love.graphics.draw( self.Texture, xPos, yPos )
     end
   end
 
 end
 
-function brickWall:setupSpriteBatch2( )
+function brickWall:drawSprites2( )
 
 
-	self.spriteBatch2:clear()
  
   -- Set up (but don't draw) our images in a grid
   for y = 0, self.maxY2 do
@@ -659,7 +660,7 @@ function brickWall:setupSpriteBatch2( )
       local yPos = self.YOffset - (self.Height2/2) + y * 32
  
       -- Add the image we previously set to this point
-      self.spriteBatch2:add(xPos, yPos)
+     love.graphics.draw( self.Texture, xPos, yPos )
     end
   end
 
@@ -667,11 +668,10 @@ end
 
 function brickWall:Draw()
   -- Draw the spriteBatch with only one call!
-  self:setupSpriteBatch1( )
-  self:setupSpriteBatch2( )
+
   love.graphics.setColor(255,255,255)
-  love.graphics.draw(self.spriteBatch1)
-  love.graphics.draw(self.spriteBatch2)
+  self:drawSprites1( )
+  self:drawSprites2( )
 
 
 end
